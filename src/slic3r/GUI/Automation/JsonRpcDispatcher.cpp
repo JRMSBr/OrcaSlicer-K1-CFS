@@ -1,6 +1,7 @@
 #include "JsonRpcDispatcher.hpp"
 #include "WidgetSerializer.hpp"
 #include "Locator.hpp"
+#include <algorithm>
 #include <chrono>
 #include <thread>
 
@@ -291,7 +292,43 @@ nlohmann::json JsonRpcDispatcher::m_input_key(const nlohmann::json& params) {
     return { {"ok", ok} };
 }
 
-nlohmann::json JsonRpcDispatcher::m_sync_wait_for(const nlohmann::json&)        { throw AutomationError(kMethodNotFound, "not implemented"); }
+nlohmann::json JsonRpcDispatcher::m_sync_wait_for(const nlohmann::json& params) {
+    if (!params.is_object() || !params.contains("target") || !params.contains("state"))
+        throw AutomationError(kInvalidParams, "sync.wait_for requires 'target' and 'state'");
+
+    const Target target = parse_target(params.at("target"));
+    const std::string state_s = params.at("state").get<std::string>();
+    WaitState state;
+    if      (state_s == "exists")  state = WaitState::Exists;
+    else if (state_s == "visible") state = WaitState::Visible;
+    else if (state_s == "enabled") state = WaitState::Enabled;
+    else if (state_s == "value")   state = WaitState::Value;
+    else throw AutomationError(kInvalidParams, "unknown state: " + state_s);
+
+    std::optional<std::string> expected = opt_str(params, "value");
+    const int timeout_ms = params.contains("timeout_ms") && params.at("timeout_ms").is_number_integer()
+                               ? params.at("timeout_ms").get<int>() : 5000;
+    const int poll_ms = params.contains("poll_ms") && params.at("poll_ms").is_number_integer()
+                            ? std::max(1, params.at("poll_ms").get<int>()) : 100;
+
+    const auto start = std::chrono::steady_clock::now();
+    for (;;) {
+        m_backend.refresh_ui();
+        const UiNode root = m_backend.dump_tree(DumpOptions{});
+        int count = 0;
+        const UiNode* node = resolve_unique(root, target, count);
+        if (evaluate_state(node, state, expected)) {
+            const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - start).count();
+            return { {"ok", true}, {"elapsed_ms", static_cast<int>(elapsed)} };
+        }
+        const auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start).count();
+        if (elapsed_ms >= timeout_ms)
+            throw AutomationError(kErrWaitTimeout, "wait_for timed out for state: " + state_s);
+        std::this_thread::sleep_for(std::chrono::milliseconds(poll_ms));
+    }
+}
 
 nlohmann::json JsonRpcDispatcher::m_app_state(const nlohmann::json&) {
     return app_state_to_json(m_backend.app_state());

@@ -170,3 +170,37 @@ TEST_CASE("screenshot.viewport3d returns base64 + dims", "[automation][rpc]") {
     CHECK(mock.screenshot_viewport_count == 1);
     CHECK(resp.at("result").at("png_base64").is_string());
 }
+
+TEST_CASE("sync.wait_for succeeds once the condition holds", "[automation][rpc]") {
+    MockUiBackend mock;
+    // First 2 polls: btn disabled. 3rd poll: enabled.
+    mock.tree_provider = [](int call) {
+        UiNode root; root.klass = "MainFrame"; root.path = "MainFrame";
+        UiNode b; b.id = "btn_slice"; b.klass = "Button"; b.path = "MainFrame/Button[0]";
+        b.visible = true; b.enabled = (call >= 2);
+        root.children = {b};
+        return root;
+    };
+    JsonRpcDispatcher d(mock);
+    const json resp = d.dispatch({{"jsonrpc","2.0"},{"id",1},{"method","sync.wait_for"},
+        {"params",{{"target",{{"id","btn_slice"}}},{"state","enabled"},
+                   {"timeout_ms",2000},{"poll_ms",1}}}});
+    CHECK(resp.at("result").at("ok") == true);
+    CHECK(mock.dump_count >= 3);
+}
+
+TEST_CASE("sync.wait_for times out -> 1003", "[automation][rpc]") {
+    MockUiBackend mock;
+    mock.tree_provider = [](int) {
+        UiNode root; root.klass = "MainFrame"; root.path = "MainFrame";
+        UiNode b; b.id = "btn_slice"; b.visible = true; b.enabled = false;
+        b.path = "MainFrame/Button[0]";
+        root.children = {b};
+        return root;
+    };
+    JsonRpcDispatcher d(mock);
+    const json resp = d.dispatch({{"jsonrpc","2.0"},{"id",2},{"method","sync.wait_for"},
+        {"params",{{"target",{{"id","btn_slice"}}},{"state","enabled"},
+                   {"timeout_ms",30},{"poll_ms",5}}}});
+    CHECK(resp.at("error").at("code") == kErrWaitTimeout);
+}
