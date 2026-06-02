@@ -121,6 +121,7 @@
 #include "NotificationManager.hpp"
 #include "PresetComboBoxes.hpp"
 #include "MsgDialog.hpp"
+#include "Automation/AutomationRegistry.hpp"
 #include "ProjectDirtyStateManager.hpp"
 #include "Gizmos/GLGizmoSimplify.hpp" // create suggestion notification
 #include "Gizmos/GLGizmoSVG.hpp" // Drop SVG file
@@ -1768,6 +1769,7 @@ Sidebar::Sidebar(Plater *parent)
         });
 
         p->combo_printer = new PlaterPresetComboBox(p->panel_printer_preset, Preset::TYPE_PRINTER);
+        Slic3r::GUI::Automation::set_automation_id(p->combo_printer, "combo_printer");
         p->combo_printer->SetBorderWidth(0);
         p->combo_printer->SetMaxSize(wxSize(-1, FromDIP(30))); // limiting height makes badge visible
         // ORCA paint whole combobox on focus
@@ -2167,6 +2169,7 @@ Sidebar::Sidebar(Plater *parent)
 
     /* first filament item */
     init_filament_combo(&p->combos_filament[0], 0);
+    Slic3r::GUI::Automation::set_automation_id(p->combos_filament[0], "combo_filament");
 
     //bSizer_filament_content->Add(p->sizer_filaments, 1, wxALIGN_CENTER | wxALL);
     wxSizer *sizer_filaments2 = new wxBoxSizer(wxVERTICAL);
@@ -5062,6 +5065,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     }
 
     wxGLCanvas* view3D_canvas = view3D->get_wxglcanvas();
+    Slic3r::GUI::Automation::set_automation_id(view3D_canvas, "canvas_3d");
     //BBS: GUI refactor
     wxGLCanvas* preview_canvas = preview->get_wxglcanvas();
 

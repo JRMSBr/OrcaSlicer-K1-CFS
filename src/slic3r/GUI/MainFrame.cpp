@@ -54,6 +54,7 @@
 #include "GUI_App.hpp"
 #include "UnsavedChangesDialog.hpp"
 #include "MsgDialog.hpp"
+#include "Automation/AutomationRegistry.hpp"
 #include "Notebook.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
@@ -1326,6 +1327,7 @@ void MainFrame::init_tabpanel() {
         //BBS add pages
     m_monitor = new MonitorPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_monitor->SetBackgroundColour(*wxWHITE);
+    Slic3r::GUI::Automation::set_automation_id(m_monitor, "tab_device");
     m_tabpanel->AddPage(m_monitor, _L("Device"), std::string("tab_monitor_active"), std::string("tab_monitor_active"), false);
 
     m_printer_view = new PrinterWebView(m_tabpanel);
@@ -1384,6 +1386,7 @@ void MainFrame::show_device(bool bBBLPrinter) {
         if (!m_monitor) {
             m_monitor = new MonitorPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
             m_monitor->SetBackgroundColour(*wxWHITE);
+            Slic3r::GUI::Automation::set_automation_id(m_monitor, "tab_device");
         }
         m_monitor->Show(false);
         m_tabpanel->InsertPage(tpMonitor, m_monitor, _L("Device"), std::string("tab_monitor_active"), std::string("tab_monitor_active"));
@@ -1833,6 +1836,10 @@ wxBoxSizer* MainFrame::create_side_tools()
     m_slice_option_btn = new SideButton(slice_panel, "", "sidebutton_dropdown", 0, 14);
     m_print_btn = new SideButton(print_panel, _L("Print plate"), "");
     m_print_option_btn = new SideButton(print_panel, "", "sidebutton_dropdown", 0, 14);
+    // Stable automation ids for external scripts (safe no-op when automation is disabled).
+    // m_print_btn doubles as the export-G-code action depending on m_print_select.
+    Slic3r::GUI::Automation::set_automation_id(m_slice_btn, "btn_slice");
+    Slic3r::GUI::Automation::set_automation_id(m_print_btn, "btn_export");
 
     auto slice_sizer = new wxBoxSizer(wxHORIZONTAL);
     slice_sizer->Add(m_slice_option_btn, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, FromDIP(1));
