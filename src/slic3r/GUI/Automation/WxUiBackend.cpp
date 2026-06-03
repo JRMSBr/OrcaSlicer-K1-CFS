@@ -5,9 +5,8 @@
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/MainFrame.hpp"
 #include "slic3r/GUI/Plater.hpp"
-#include "slic3r/GUI/GLCanvas3D.hpp"
+#include "slic3r/GUI/GLCanvas3D.hpp"  // get_current_canvas3D() for app.state
 #include "libslic3r/Model.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
 
 #include <wx/window.h>
 #include <wx/toplevel.h>
@@ -270,21 +269,6 @@ PngImage wximage_to_png(const wxImage& image) {
     return out;
 }
 
-// RGBA ThumbnailData -> wxImage (mirrors GLCanvas3D::debug_output_thumbnail —
-// note the vertical flip GL rows require).
-wxImage thumbnail_to_wximage(const ThumbnailData& td) {
-    wxImage image((int)td.width, (int)td.height);
-    image.InitAlpha();
-    for (unsigned int r = 0; r < td.height; ++r) {
-        unsigned int rr = (td.height - 1 - r) * td.width;
-        for (unsigned int c = 0; c < td.width; ++c) {
-            const unsigned char* px = td.pixels.data() + 4 * (rr + c);
-            image.SetRGB((int)c, (int)r, px[0], px[1], px[2]);
-            image.SetAlpha((int)c, (int)r, px[3]);
-        }
-    }
-    return image;
-}
 } // namespace
 
 PngImage WxUiBackend::screenshot_window(const UiNode* target) {
@@ -316,34 +300,6 @@ PngImage WxUiBackend::screenshot_window(const UiNode* target) {
         mdc.Blit(0, 0, sz.x, sz.y, &sdc, origin.x, origin.y);
         mdc.SelectObject(wxNullBitmap);
         return wximage_to_png(bmp.ConvertToImage());
-    });
-}
-
-PngImage WxUiBackend::screenshot_viewport3d(std::optional<int> plate,
-                                            std::optional<int> width,
-                                            std::optional<int> height) {
-    return run_on_gui(m_gui_timeout_ms, [&]() -> PngImage {
-        Plater* p = wxGetApp().plater();
-        if (p == nullptr)
-            throw AutomationError(kErrScreenshotFail, "no plater");
-        GLCanvas3D* canvas = p->get_current_canvas3D();
-        if (canvas == nullptr)
-            throw AutomationError(kErrScreenshotFail, "no 3D canvas");
-        const unsigned int w = width  ? (unsigned)*width  : 800u;
-        const unsigned int h = height ? (unsigned)*height : 600u;
-
-        // Render the active plate's 3D scene into an offscreen RGBA buffer.
-        // render_thumbnail makes the canvas's GL context current itself. The
-        // pixel size is governed by w/h; `sizes` stays empty as elsewhere.
-        // Fields: {sizes, printable_only, parts_only, show_bed, transparent_background, plate_id}.
-        const int plate_id = plate ? *plate : 0; // v1: default active plate
-        const ThumbnailsParams params{ {}, false, false, true, false, plate_id };
-
-        ThumbnailData data;
-        canvas->render_thumbnail(data, w, h, params, Camera::EType::Ortho);
-        if (!data.is_valid())
-            throw AutomationError(kErrScreenshotFail, "thumbnail render failed");
-        return wximage_to_png(thumbnail_to_wximage(data));
     });
 }
 

@@ -92,11 +92,9 @@ public:
     // Send key chords (e.g. ctrl+s) to the focused window.
     virtual bool send_keys(const std::vector<KeyChord>& chords) = 0;
 
-    // Screenshots. target == nullptr => main frame.
+    // Screenshot. target == nullptr => main frame. Captured from the on-screen
+    // composited framebuffer, so it includes the GL viewport and ImGui overlays.
     virtual PngImage screenshot_window(const UiNode* target) = 0;
-    virtual PngImage screenshot_viewport3d(std::optional<int> plate,
-                                           std::optional<int> width,
-                                           std::optional<int> height) = 0;
 };
 
 }}} // namespace Slic3r::GUI::Automation

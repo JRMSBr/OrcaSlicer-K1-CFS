@@ -1,5 +1,5 @@
 """End-to-end smoke test: launch OrcaSlicer with the automation server, load a
-model, slice it, wait for completion, and save both a window PNG and a 3D PNG.
+model, slice it, wait for completion, and save a window PNG.
 
 Run:
     python example_slice.py --orca /path/to/OrcaSlicer --model /path/to/cube.stl
@@ -56,11 +56,12 @@ def main() -> int:
         orca.wait_for({"id": "btn_export"}, state="enabled", timeout_ms=180000,
                       poll_ms=500)
 
+        # The window screenshot is captured from the on-screen composited
+        # framebuffer, so it already includes the 3D viewport (model in the
+        # editor, or toolpaths in Preview after slicing).
         with open("window.png", "wb") as f:
             f.write(orca.screenshot())
-        with open("preview_3d.png", "wb") as f:
-            f.write(orca.screenshot_3d(width=1920, height=1080))
-        print("wrote window.png and preview_3d.png")
+        print("wrote window.png")
         return 0
     finally:
         proc.terminate()

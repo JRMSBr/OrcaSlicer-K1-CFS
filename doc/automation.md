@@ -4,7 +4,8 @@ OrcaSlicer ships an **opt-in, localhost-only JSON-RPC server** that lets externa
 scripts introspect, drive, and screenshot the running OrcaSlicer GUI. It is built
 for end-to-end testing and automation: a script can enumerate the live widget
 tree, click buttons, type text, send keyboard shortcuts, wait for UI state, query
-high-level application state, and capture both window and 3D-viewport images.
+high-level application state, and capture window images (the on-screen capture
+includes the 3D viewport).
 
 This document is the protocol reference. It describes activation, the transport,
 the JSON-RPC envelope, every method, the unified node shape, the target/locator
@@ -109,8 +110,7 @@ Returns server identity and the list of supported methods. Takes no parameters.
   "protocol": "2.0",
   "capabilities": [
     "tree.dump", "tree.find", "widget.get", "input.click", "input.type",
-    "input.key", "sync.wait_for", "app.state", "screenshot.window",
-    "screenshot.viewport3d"
+    "input.key", "sync.wait_for", "app.state", "screenshot.window"
   ]
 }
 ```
@@ -295,28 +295,10 @@ method reads from the screen.)
 - **HiDPI:** the reported `width`/`height` come from the window's logical client size,
   while the screen framebuffer is in physical pixels. On per-monitor-DPI displays the
   two can differ; the capture may be cropped or scaled relative to the logical size.
-- For a clean, occlusion-independent, arbitrary-resolution render of the 3D scene
-  (including when the 3D tab is not the visible view), use
-  [`screenshot.viewport3d`](#screenshotviewport3d) instead.
-
-### `screenshot.viewport3d`
-
-Render a 3D plate offscreen and return it as a PNG. Unlike `screenshot.window`, this
-renders into an offscreen framebuffer, so it is independent of window size and
-occlusion, works even when the 3D tab is hidden, and supports arbitrary output
-resolution — making it the right choice for clean, deterministic captures.
-
-**Params (all optional):**
-
-| Param | Type | Default | Meaning |
-|---|---|---|---|
-| `plate` | int | active plate | Plate index to render. |
-| `width` | int | `800` | Output width in pixels. |
-| `height` | int | `600` | Output height in pixels. |
-
-**Result:** `{ "png_base64": "<base64 PNG>", "width": <int>, "height": <int> }`.
-
-**Errors:** `1005` on failure.
+- Because the capture is the live on-screen image, the 3D content reflects the
+  **current view**: the model in the 3D editor, or the gcode toolpaths in Preview
+  after a slice. There is no separate offscreen 3D-render method — the window
+  capture already includes whatever the GL canvas is showing.
 
 ---
 
@@ -494,8 +476,7 @@ Consequences and conventions:
 - **`screenshot.window` reads the screen.** It captures the on-screen, DWM-composited
   framebuffer, so the target window must be visible and unobscured, and the result is
   in physical pixels (see HiDPI caveat under [`screenshot.window`](#screenshotwindow)).
-  For occlusion-independent 3D captures use
-  [`screenshot.viewport3d`](#screenshotviewport3d).
+  The capture includes the GL 3D viewport as currently shown (model or toolpaths).
 - **Single-client / serialized.** v1 handles one request at a time; issue requests
   sequentially from a single client.
 - **GUI-thread marshaling.** Every backend call is marshaled onto the GUI thread
@@ -517,14 +498,14 @@ orca.click({"id": "btn_slice"})             # start slicing the plate
 orca.wait_for({"id": "btn_export"},         # wait until slicing finishes
               state="enabled", timeout_ms=180000)
 
-png = orca.screenshot_3d(width=1024, height=768)   # render the 3D viewport
-with open("preview_3d.png", "wb") as f:
+png = orca.screenshot()                     # on-screen capture (incl. 3D view)
+with open("window.png", "wb") as f:
     f.write(png)
 ```
 
 For a full, runnable end-to-end example — launching OrcaSlicer with the automation
-flags, loading a model, slicing, waiting for completion, and saving both a window
-PNG and a 3D PNG — see `tools/automation/example_slice.py`.
+flags, loading a model, slicing, waiting for completion, and saving a window PNG —
+see `tools/automation/example_slice.py`.
 
 ---
 

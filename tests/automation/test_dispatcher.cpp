@@ -162,15 +162,6 @@ TEST_CASE("screenshot.window returns base64 + dims", "[automation][rpc]") {
     CHECK_FALSE(resp.at("result").at("png_base64").get<std::string>().empty());
 }
 
-TEST_CASE("screenshot.viewport3d returns base64 + dims", "[automation][rpc]") {
-    MockUiBackend mock;
-    JsonRpcDispatcher d(mock);
-    const json resp = d.dispatch({{"jsonrpc","2.0"},{"id",3},{"method","screenshot.viewport3d"},
-                                  {"params",{{"width",256},{"height",256}}}});
-    CHECK(mock.screenshot_viewport_count == 1);
-    CHECK(resp.at("result").at("png_base64").is_string());
-}
-
 TEST_CASE("sync.wait_for succeeds once the condition holds", "[automation][rpc]") {
     MockUiBackend mock;
     // First 2 polls: btn disabled. 3rd poll: enabled.

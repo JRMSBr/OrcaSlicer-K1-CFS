@@ -6,8 +6,8 @@ Usage:
     print(orca.version())
     orca.click({"id": "btn_slice"})
     orca.wait_for({"id": "btn_export"}, state="enabled", timeout_ms=120000)
-    png = orca.screenshot_3d(width=1024, height=768)
-    open("preview.png", "wb").write(png)
+    png = orca.screenshot()
+    open("window.png", "wb").write(png)
 """
 from __future__ import annotations
 import base64
@@ -94,18 +94,8 @@ class OrcaClient:
         return self._call("app.state")
 
     def screenshot(self, target: Optional[dict] = None) -> bytes:
+        """Capture a window as a PNG, exactly as composited on screen (includes the
+        GL 3D viewport and ImGui overlays). Defaults to the main frame."""
         params = {"target": target} if target is not None else None
         result = self._call("screenshot.window", params)
-        return base64.b64decode(result["png_base64"])
-
-    def screenshot_3d(self, plate: Optional[int] = None,
-                      width: Optional[int] = None, height: Optional[int] = None) -> bytes:
-        params: dict = {}
-        if plate is not None:
-            params["plate"] = plate
-        if width is not None:
-            params["width"] = width
-        if height is not None:
-            params["height"] = height
-        result = self._call("screenshot.viewport3d", params or None)
         return base64.b64decode(result["png_base64"])

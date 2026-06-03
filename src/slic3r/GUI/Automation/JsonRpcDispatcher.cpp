@@ -155,12 +155,6 @@ std::string base64_encode(const std::vector<unsigned char>& data) {
     return out;
 }
 
-std::optional<int> opt_int(const nlohmann::json& p, const char* key) {
-    if (p.is_object() && p.contains(key) && p.at(key).is_number_integer())
-        return p.at(key).get<int>();
-    return std::nullopt;
-}
-
 nlohmann::json image_to_json(const PngImage& img) {
     if (img.png.empty())
         throw AutomationError(kErrScreenshotFail, "screenshot produced no data");
@@ -174,8 +168,7 @@ nlohmann::json JsonRpcDispatcher::m_version(const nlohmann::json&) {
              {"protocol", "2.0"},
              {"capabilities", nlohmann::json::array({
                  "tree.dump","tree.find","widget.get","input.click","input.type",
-                 "input.key","sync.wait_for","app.state","screenshot.window",
-                 "screenshot.viewport3d" })} };
+                 "input.key","sync.wait_for","app.state","screenshot.window" })} };
 }
 
 nlohmann::json JsonRpcDispatcher::dispatch(const nlohmann::json& request) {
@@ -200,7 +193,6 @@ nlohmann::json JsonRpcDispatcher::dispatch(const nlohmann::json& request) {
         if (method == "sync.wait_for")             return make_result(id, m_sync_wait_for(params));
         if (method == "app.state")                 return make_result(id, m_app_state(params));
         if (method == "screenshot.window")         return make_result(id, m_screenshot_window(params));
-        if (method == "screenshot.viewport3d")     return make_result(id, m_screenshot_viewport3d(params));
         return make_error(id, kMethodNotFound, "unknown method: " + method);
     } catch (const AutomationError& e) {
         return make_error(id, e.code, e.what());
@@ -348,11 +340,6 @@ nlohmann::json JsonRpcDispatcher::m_screenshot_window(const nlohmann::json& para
         target_ptr = &resolved;
     }
     return image_to_json(m_backend.screenshot_window(target_ptr));
-}
-
-nlohmann::json JsonRpcDispatcher::m_screenshot_viewport3d(const nlohmann::json& params) {
-    return image_to_json(m_backend.screenshot_viewport3d(
-        opt_int(params, "plate"), opt_int(params, "width"), opt_int(params, "height")));
 }
 
 }}} // namespace

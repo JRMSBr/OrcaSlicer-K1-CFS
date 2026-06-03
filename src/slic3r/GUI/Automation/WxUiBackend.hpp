@@ -19,8 +19,6 @@ public:
     bool     type_text(const std::string& text) override;
     bool     send_keys(const std::vector<KeyChord>& chords) override;
     PngImage screenshot_window(const UiNode* target) override;
-    PngImage screenshot_viewport3d(std::optional<int> plate, std::optional<int> width,
-                                   std::optional<int> height) override;
 
 private:
     int m_gui_timeout_ms;

@@ -18,7 +18,6 @@ public:
     std::vector<std::string> typed_text;
     std::vector<std::vector<KeyChord>> sent_keys;
     int               screenshot_window_count   = 0;
-    int               screenshot_viewport_count = 0;
 
     // Canned outputs (set by tests).
     UiNode   tree;                                  // default tree for dump_tree
@@ -49,10 +48,6 @@ public:
     }
     PngImage screenshot_window(const UiNode*) override {
         ++screenshot_window_count; return canned_png;
-    }
-    PngImage screenshot_viewport3d(std::optional<int>, std::optional<int>,
-                                   std::optional<int>) override {
-        ++screenshot_viewport_count; return canned_png;
     }
 };
 
