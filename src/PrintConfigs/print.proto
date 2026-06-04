@@ -9,6 +9,13 @@ package orca;
 
 message PrintSettings {
 
+  // Keys defined in PrintConfigDef::init_common_params() that belong to print presets.
+  // Listed as virtual_preset_keys so the codegen includes them in s_Preset_print_options.
+  option (virtual_preset_keys) = "compatible_printers_condition";
+  option (virtual_preset_keys) = "elefant_foot_compensation";
+  option (virtual_preset_keys) = "elefant_foot_compensation_layers";
+  option (virtual_preset_keys) = "elefant_foot_layers_density";
+  option (virtual_preset_keys) = "layer_height";
 
   int32 extruder = 1 [
     (label)     = "Extruder",
@@ -25,13 +32,9 @@ message PrintSettings {
 
 
   bool has_scarf_joint_seam = 2 [
-    (full_label)     = "Maximum jerk %1%",
-    (tooltip)     = "Maximum jerk of the %1% axis",
-    (category)     = "Machine limits",
-    (sidetext)     = "mm/s",
-    (min_value)     = 0,
+    (mode)        = MODE_ADVANCED,
     (has_default)  = true,
-    (default_value) = "axis.max_jerk"
+    (default_value) = "false"
   ];
 
 
@@ -111,7 +114,10 @@ message PrintSettings {
     (tooltip)     = "Maximum speed of X axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "500., 200."
   ];
 
 
@@ -120,7 +126,10 @@ message PrintSettings {
     (tooltip)     = "Maximum acceleration of the X axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s²",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "1000., 1000."
   ];
 
 
@@ -129,7 +138,10 @@ message PrintSettings {
     (tooltip)     = "Maximum jerk of the X axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "10., 10."
   ];
 
 
@@ -138,7 +150,10 @@ message PrintSettings {
     (tooltip)     = "Maximum speed of Y axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "500., 200."
   ];
 
 
@@ -147,7 +162,10 @@ message PrintSettings {
     (tooltip)     = "Maximum acceleration of the Y axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s²",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "1000., 1000."
   ];
 
 
@@ -156,7 +174,10 @@ message PrintSettings {
     (tooltip)     = "Maximum jerk of the Y axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "10., 10."
   ];
 
 
@@ -165,7 +186,10 @@ message PrintSettings {
     (tooltip)     = "Maximum speed of Z axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "12., 12."
   ];
 
 
@@ -174,7 +198,10 @@ message PrintSettings {
     (tooltip)     = "Maximum acceleration of the Z axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s²",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "500., 200."
   ];
 
 
@@ -183,7 +210,10 @@ message PrintSettings {
     (tooltip)     = "Maximum jerk of the Z axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "0.2, 0.4"
   ];
 
 
@@ -192,7 +222,10 @@ message PrintSettings {
     (tooltip)     = "Maximum speed of E axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "120., 120."
   ];
 
 
@@ -201,7 +234,10 @@ message PrintSettings {
     (tooltip)     = "Maximum acceleration of the E axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s²",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "5000., 5000."
   ];
 
 
@@ -210,7 +246,10 @@ message PrintSettings {
     (tooltip)     = "Maximum jerk of the E axis",
     (category)     = "Machine limits",
     (sidetext)     = "mm/s",
-    (min_value)     = 0
+    (min_value)     = 0,
+    (mode)        = MODE_SIMPLE,
+    (has_default)  = true,
+    (default_value) = "2.5, 2.5"
   ];
 
 
@@ -5070,7 +5109,23 @@ message PrintSettings {
     (tab_page)     = "Strength",
     (tab_optgroup)     = "Top/bottom shells",
     (has_default)  = true,
-    (default_value) = "ipMonotonic"
+    (default_value) = "ipMonotonic",
+    (enum_value_entries) = "monotonic",
+    (enum_value_entries) = "monotonicline",
+    (enum_value_entries) = "rectilinear",
+    (enum_value_entries) = "alignedrectilinear",
+    (enum_value_entries) = "concentric",
+    (enum_value_entries) = "hilbertcurve",
+    (enum_value_entries) = "archimedeanchords",
+    (enum_value_entries) = "octagramspiral",
+    (enum_label_entries) = "Monotonic",
+    (enum_label_entries) = "Monotonic line",
+    (enum_label_entries) = "Rectilinear",
+    (enum_label_entries) = "Aligned Rectilinear",
+    (enum_label_entries) = "Concentric",
+    (enum_label_entries) = "Hilbert Curve",
+    (enum_label_entries) = "Archimedean Chords",
+    (enum_label_entries) = "Octagram Spiral"
   ];
 
 
@@ -5084,7 +5139,23 @@ message PrintSettings {
     (tab_page)     = "Strength",
     (tab_optgroup)     = "Infill",
     (has_default)  = true,
-    (default_value) = "ipMonotonic"
+    (default_value) = "ipMonotonic",
+    (enum_value_entries) = "monotonic",
+    (enum_value_entries) = "monotonicline",
+    (enum_value_entries) = "rectilinear",
+    (enum_value_entries) = "alignedrectilinear",
+    (enum_value_entries) = "concentric",
+    (enum_value_entries) = "hilbertcurve",
+    (enum_value_entries) = "archimedeanchords",
+    (enum_value_entries) = "octagramspiral",
+    (enum_label_entries) = "Monotonic",
+    (enum_label_entries) = "Monotonic line",
+    (enum_label_entries) = "Rectilinear",
+    (enum_label_entries) = "Aligned Rectilinear",
+    (enum_label_entries) = "Concentric",
+    (enum_label_entries) = "Hilbert Curve",
+    (enum_label_entries) = "Archimedean Chords",
+    (enum_label_entries) = "Octagram Spiral"
   ];
 
 

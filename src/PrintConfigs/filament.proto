@@ -13,25 +13,11 @@ message FilamentSettings {
   // Compatibility / inheritance metadata
   option (virtual_preset_keys) = "compatible_prints";
   option (virtual_preset_keys) = "compatible_printers";
+  option (virtual_preset_keys) = "filament_colour";
   option (virtual_preset_keys) = "filament_flush_temp";
+  option (virtual_preset_keys) = "filament_ramming_parameters";
   option (virtual_preset_keys) = "inherits";
-  // Per-filament retraction overrides (filament_extruder_override_keys in PrintConfig.cpp)
-  option (virtual_preset_keys) = "filament_deretraction_speed";
-  option (virtual_preset_keys) = "filament_long_retractions_when_cut";
-  option (virtual_preset_keys) = "filament_retract_before_wipe";
-  option (virtual_preset_keys) = "filament_retract_lift_above";
-  option (virtual_preset_keys) = "filament_retract_lift_below";
-  option (virtual_preset_keys) = "filament_retract_lift_enforce";
-  option (virtual_preset_keys) = "filament_retract_restart_extra";
-  option (virtual_preset_keys) = "filament_retract_when_changing_layer";
-  option (virtual_preset_keys) = "filament_retraction_distances_when_cut";
-  option (virtual_preset_keys) = "filament_retraction_length";
-  option (virtual_preset_keys) = "filament_retraction_minimum_travel";
-  option (virtual_preset_keys) = "filament_retraction_speed";
-  option (virtual_preset_keys) = "filament_wipe";
-  option (virtual_preset_keys) = "filament_wipe_distance";
-  option (virtual_preset_keys) = "filament_z_hop";
-  option (virtual_preset_keys) = "filament_z_hop_types";
+  option (virtual_preset_keys) = "volumetric_speed_coefficients";
 
   repeated string filament_end_gcode = 1 [
     (label)     = "End G-code",
@@ -1740,5 +1726,208 @@ message FilamentSettings {
     (has_default)  = true,
     (default_value) = "\"Direct Drive Standard\"",
     (preset)     = PRESET_FILAMENT
+  ];
+
+  // Per-filament nullable overrides for extruder retraction settings.
+  // These allow filament profiles to override printer-level retraction values.
+  // is_nullable=true means the value can be unset (nil) to inherit from the printer.
+
+  repeated float filament_retraction_length = 104 [
+    (label)       = "Length",
+    (full_label)  = "Retraction Length",
+    (tooltip)     = "Some amount of material in extruder is pulled back to avoid ooze during long travel. Set zero to disable retraction.",
+    (sidetext)    = "mm",
+    (mode)        = MODE_SIMPLE,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "0.8"
+  ];
+
+  repeated float filament_z_hop = 105 [
+    (label)       = "Z-hop height",
+    (tooltip)     = "Whenever the retraction is done, the nozzle is lifted a little to create clearance between nozzle and the print. It prevents nozzle from hitting the print when travel move. Using spiral lines to lift Z can prevent stringing.",
+    (sidetext)    = "mm",
+    (min_value)   = 0,
+    (max_value)   = 5,
+    (mode)        = MODE_SIMPLE,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "0.4"
+  ];
+
+  repeated int32 filament_z_hop_types = 106 [
+    (label)       = "Z-hop type",
+    (tooltip)     = "Type of Z-hop.",
+    (enum_keys_map_ref) = "ConfigOptionEnum<ZHopType>::get_enum_values()",
+    (co_type_hint) = "coEnums",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "ZHopType::zhtSlope",
+    (enum_value_entries) = "Auto Lift",
+    (enum_value_entries) = "Normal Lift",
+    (enum_value_entries) = "Slope Lift",
+    (enum_value_entries) = "Spiral Lift",
+    (enum_label_entries) = "Auto",
+    (enum_label_entries) = "Normal",
+    (enum_label_entries) = "Slope",
+    (enum_label_entries) = "Spiral"
+  ];
+
+  repeated float filament_retract_lift_above = 107 [
+    (label)       = "Only lift Z above",
+    (tooltip)     = "If you set this to a positive value, Z lift will only take place above the specified absolute Z.",
+    (sidetext)    = "mm",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "0."
+  ];
+
+  repeated float filament_retract_lift_below = 108 [
+    (label)       = "Only lift Z below",
+    (tooltip)     = "If you set this to a positive value, Z lift will only take place below the specified absolute Z.",
+    (sidetext)    = "mm",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "0."
+  ];
+
+  repeated int32 filament_retract_lift_enforce = 109 [
+    (label)       = "On surfaces",
+    (tooltip)     = "Enforce Z-Hop behavior. This setting is impacted by the above settings (Only lift Z above/below).",
+    (enum_keys_map_ref) = "ConfigOptionEnum<RetractLiftEnforceType>::get_enum_values()",
+    (co_type_hint) = "coEnums",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "RetractLiftEnforceType ::rletAllSurfaces",
+    (enum_value_entries) = "All Surfaces",
+    (enum_value_entries) = "Top Only",
+    (enum_value_entries) = "Bottom Only",
+    (enum_value_entries) = "Top and Bottom",
+    (enum_label_entries) = "All Surfaces",
+    (enum_label_entries) = "Top Only",
+    (enum_label_entries) = "Bottom Only",
+    (enum_label_entries) = "Top and Bottom"
+  ];
+
+  repeated float filament_retraction_speed = 110 [
+    (label)       = "Retraction Speed",
+    (full_label)  = "Retraction Speed",
+    (tooltip)     = "Speed for retracting filament from the nozzle.",
+    (sidetext)    = "mm/s",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "30."
+  ];
+
+  repeated float filament_deretraction_speed = 111 [
+    (label)       = "De-retraction Speed",
+    (full_label)  = "De-retraction Speed",
+    (tooltip)     = "Speed for reloading filament into the nozzle. Zero means same speed of retraction.",
+    (sidetext)    = "mm/s",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "0."
+  ];
+
+  repeated float filament_retract_restart_extra = 112 [
+    (label)       = "Extra length on restart",
+    (tooltip)     = "When the retraction is compensated after the travel move, the extruder will push this additional amount of filament. This setting is rarely needed.",
+    (sidetext)    = "mm",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "0."
+  ];
+
+  repeated float filament_retraction_minimum_travel = 113 [
+    (label)       = "Travel distance threshold",
+    (tooltip)     = "Only trigger retraction when the travel distance is longer than this threshold.",
+    (sidetext)    = "mm",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "2."
+  ];
+
+  repeated float filament_wipe_distance = 114 [
+    (label)       = "Wipe Distance",
+    (tooltip)     = "Describe how long the nozzle will move along the last path when retracting.",
+    (sidetext)    = "mm",
+    (min_value)   = 0,
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "1."
+  ];
+
+  repeated bool filament_retract_when_changing_layer = 115 [
+    (label)       = "Retract when change layer",
+    (tooltip)     = "Force a retraction when changes layer.",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "false"
+  ];
+
+  repeated bool filament_wipe = 116 [
+    (label)       = "Wipe while retracting",
+    (tooltip)     = "Move nozzle along the last extrusion path when retracting to clean any leaked material on the nozzle. This can minimize blobs when printing a new part after traveling.",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "false"
+  ];
+
+  repeated float filament_retract_before_wipe = 117 [
+    (label)       = "Retract amount before wipe",
+    (tooltip)     = "The length of fast retraction before wipe, relative to retraction length.",
+    (sidetext)    = "%",
+    (co_type_hint) = "coPercents",
+    (mode)        = MODE_ADVANCED,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "100"
+  ];
+
+  repeated bool filament_long_retractions_when_cut = 118 [
+    (label)       = "Long retraction when cut (beta)",
+    (tooltip)     = "Experimental feature: Retracting and cutting off the filament at a longer distance during changes to minimize purge. While this reduces flush significantly, it may also raise the risk of nozzle clogs or other printing problems.",
+    (mode)        = MODE_SIMPLE,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "false"
+  ];
+
+  repeated float filament_retraction_distances_when_cut = 119 [
+    (label)       = "Retraction distance when cut",
+    (tooltip)     = "Experimental feature: Retraction length before cutting off during filament change.",
+    (min_value)   = 10,
+    (max_value)   = 18,
+    (mode)        = MODE_SIMPLE,
+    (is_nullable) = true,
+    (preset)      = PRESET_FILAMENT,
+    (has_default)  = true,
+    (default_value) = "18"
   ];
 }
