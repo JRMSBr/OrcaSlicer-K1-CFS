@@ -95,7 +95,6 @@ namespace UndoRedo {
 }
 
 namespace GUI {
-enum class LoadType : unsigned char;
 class SyncAmsInfoDialog;
 class MainFrame;
 class ConfigOptionsGroup;
@@ -194,7 +193,7 @@ public:
     void create_printer_preset();
     void init_filament_combo(PlaterPresetComboBox **combo, const int filament_idx);
     void remove_unused_filament_combos(const size_t current_extruder_count);
-    void update_all_preset_comboboxes(bool update_filament_combos = true);
+    void update_all_preset_comboboxes();
     //void update_partplate(PartPlateList& list);
     void update_presets(Slic3r::Preset::Type preset_type);
     //BBS
@@ -227,6 +226,9 @@ public:
     void load_ams_list(MachineObject* obj);
     std::map<int, DynamicPrintConfig> build_filament_ams_list(MachineObject* obj);
     void sync_ams_list(bool is_from_big_sync_btn = false);
+    bool sync_cfs_colors();
+    void queue_cfs_color_push(int filament_idx);
+    void queue_cfs_preset_push(int filament_idx);
     bool sync_extruder_list();
     bool is_fila_switch_ready();
     void reset_fila_switch();
@@ -329,6 +331,27 @@ public:
     void set_need_auto_sync_after_connect_printer(bool need_auto_sync) { m_need_auto_sync_after_connect_printer = need_auto_sync; }
 
 private:
+    bool  apply_cfs_materials_to_ui(const std::vector<std::string>& colors, const std::vector<std::string>& material_types, bool force_reapply, const char* context);
+    bool  apply_cfs_presets_to_ui(const std::vector<std::string>& material_types, bool force_reapply, const char* context);
+    bool  apply_cfs_colors_to_ui(const std::vector<std::string>& colors, bool force_reapply, const char* context);
+    void  update_cfs_auto_sync_ui();
+    void  update_cfs_config_ui();
+    void  open_cfs_config_dialog();
+    void  update_cfs_filament_badges();
+    bool  is_cfs_supported_printer() const;
+    void  handle_cfs_auto_sync_tick();
+    bool  is_cfs_auto_sync_enabled() const;
+    bool  is_cfs_auto_apply_preset_enabled() const;
+    void  set_cfs_auto_sync_enabled(bool enabled);
+    std::string get_cfs_preset_mapping_for_type(const std::string& material_type) const;
+    std::string get_cfs_material_type_for_preset(const std::string& preset_name) const;
+    void  refresh_cfs_sync_state(bool force_probe = false);
+    void  apply_cfs_sync_button_visibility();
+    std::string get_cfs_socket_host() const;
+    std::string get_cfs_socket_origin() const;
+    void  start_cfs_socket_session(const std::string& host, const std::string& origin);
+    void  stop_cfs_socket_session();
+    void  request_cfs_boxs_info();
     void  auto_calc_flushing_volumes_internal(const int filament_id, const int extruder_id);
 
 private:
@@ -390,8 +413,6 @@ public:
     bool up_to_date(bool saved, bool backup);
 
     bool open_3mf_file(const boost::filesystem::path &file_path);
-    // Batch import resolves the project/geometry question once before staging the whole set.
-    bool open_3mf_file(const boost::filesystem::path &file_path, LoadType resolved_type);
     int  get_3mf_file_count(std::vector<boost::filesystem::path> paths);
     void add_file();
     // Returns false when no object was added (e.g. the user cancelled the load dialog).
@@ -457,8 +478,7 @@ public:
     bool preview_zip_archive(const boost::filesystem::path& archive_path);
 
     // BBS: restore
-    std::vector<size_t> load_files(const std::vector<boost::filesystem::path>& input_files, LoadStrategy strategy = LoadStrategy::LoadModel | LoadStrategy::LoadConfig,  bool ask_multi = false, bool* published_out = nullptr,
-                                   const std::function<void()>& before_publish = nullptr);
+    std::vector<size_t> load_files(const std::vector<boost::filesystem::path>& input_files, LoadStrategy strategy = LoadStrategy::LoadModel | LoadStrategy::LoadConfig,  bool ask_multi = false, bool* published_out = nullptr);
     // to be called on drag and drop
     bool load_files(const wxArrayString& filenames);
 
@@ -554,8 +574,7 @@ public:
     void reset(bool apply_presets_change = false, bool reload_presets = true);
     void reset_with_confirm();
     //BBS: return int for various result
-    // With deferred_close, the steps that mark the current project closed are returned instead of run.
-    int close_with_confirm(std::function<bool(bool yes_or_no)> second_check = nullptr, std::function<void()>* deferred_close = nullptr); // BBS close project
+    int close_with_confirm(std::function<bool(bool yes_or_no)> second_check = nullptr); // BBS close project
     //BBS: trigger a restore project event
     void trigger_restore_project(int skip_confirm = 0);
     bool delete_object_from_model(size_t obj_idx, bool refresh_immediately = true); // BBS support refresh immediately
